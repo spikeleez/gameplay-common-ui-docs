@@ -7,8 +7,8 @@
 ## Common UI
 
 * [Introduction to Gameplay Common UI](common-ui/fundamentos-criacao-de-telas.md)
-* [Inputs, Icons and Global Settings](common-ui/inputs-icons-and-global-settings.md)
-* [Layer Management and Asynchronous Loading](common-ui/layer-management-and-asynchronous-loading.md)
+* [Inputs, Icons and Global Settings](common-ui/inputs-icones-e-configuracoes-globais.md)
+* [Stack Layer Management](common-ui/stack-layer-management.md)
 * [Common Nodes](common-ui/common-nodes.md)
 
 ## Common Settings

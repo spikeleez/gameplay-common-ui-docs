@@ -1,7 +1,7 @@
 ---
 description: >-
-  Nesse módulo você pode visualizar todos os nodes comuns que podemos utilizar
-  com esse sistema.
+  In this module, you can view all the common nodes that we can use with this
+  system.
 icon: share-nodes
 ---
 
@@ -9,44 +9,44 @@ icon: share-nodes
 
 #### Push Activatable Widget for Class / Tag
 
-Esses nodes são utilizados para fazer um "Push" nas Widgets para uma Stack Layer específica, isso faz com que a Widget seja ativada e adicionada ao Viewport.
+These nodes are used to “push” Widgets to a specific Stack Layer, which activates the Widget and adds it to the Viewport.
 
 <figure><img src="../.gitbook/assets/image (10).png" alt=""><figcaption></figcaption></figure>
 
 #### Pop Widgets
 
-Essas 3 funções são utilizadas para remover uma Widget de um Stack.
+These three functions are used to remove a widget from a stack.
 
-* **Pop Single Widget**: Essa função remove uma única widget do stack utilizando a referência dela.
-* **Pop Widgets from Layout**: Essa função remove todas as widgets de todos os stack layers.
-* **Pop Widgets from Layer**: Essa função remove todas as widgets de uma Stack Layer específica.
+* **Pop Single Widget**: This function removes a single widget from the stack using its reference.
+* **Pop Widgets from Layout**: This function removes all widgets from all stack layers.
+* **Pop Widgets from Layer**: This function removes all widgets from a specific Stack Layer.
 
 <figure><img src="../.gitbook/assets/image (12).png" alt=""><figcaption></figcaption></figure>
 
 #### Show Confirmations:
 
-Cada uma dessas funções tem a responsabilidade de fazer um Push de um Confirmation Dialog para a Layer de Modal.
+Each of these functions is responsible for pushing a Confirmation Dialog to the Modal Layer.
 
-* **Show Confirmation (OK)**: Essa função faz um Push de um Confirmation Dialog que tem apenas a opção de **Ok**.
-* **Show Confirmation (OK/Cancel)**: Essa função faz um Push de un Confirmation Dialog que tem as opções de **Ok e Cancel**.
-* **Show Confirmation (Yes)**: Essa função faz um Push de um Confirmation Dialog que tem apenas a opção de **Yes**.
-* **Show Confirmation (Yes/No)**: Essa função faz um Push de um Confirmation Dialog que tem as opções de **Yes e No.**
-* **Show Confirmation (Yes/No/Cancel)**: Essa função faz um Push de um Confirmation Dialog que tem as opções de **Yes, No e Cancel.**
-* **Show Confirmation Custom**: Essa função faz um Push de um Confirmation Dialog customizado que você pode registrar no **Project Settings -> Gameplay Common UI Settings -> Registered Dialog Descriptors.**
+* **Show Confirmation (OK)**: This function pushes a Confirmation Dialog that only has the OK option.
+* **Show Confirmation (OK/Cancel)**: This function pushes a Confirmation Dialog that has the OK and Cancel options.
+* **Show Confirmation (Yes)**: This function pushes a Confirmation Dialog that only has the Yes option
+* **Show Confirmation (Yes/No)**: This function pushes a Confirmation Dialog that has the Yes and No options.
+* **Show Confirmation (Yes/No/Cancel)**: This function pushes a Confirmation Dialog that has the Yes, No, and Cancel options.
+* **Show Confirmation Custom**: This function pushes a customized Confirmation Dialog that you can register in **Project Settings -> Gameplay Common UI Settings -> Registered Dialog Descriptors**.
 
 <figure><img src="../.gitbook/assets/image (13).png" alt=""><figcaption></figcaption></figure>
 
 #### Gameplay Common UI Subsystem:
 
-Esse é o subsystem principal do sistema, ele guarda algumas informações e executa lógicas específicas no C++, e na Blueprint, expõe uma forma de você acessar a `GameplayCommonUIPolicy` atual para verificar/ler informações do `GameplayPrimaryLayout`
+This is the main subsystem of the system. It stores some information and executes specific logic in C++ and Blueprint, providing a way for you to access the current `GameplayCommonUIPolicy` to check/read information from `GameplayPrimaryLayout`.
 
 <figure><img src="../.gitbook/assets/image (16).png" alt=""><figcaption></figcaption></figure>
 
 #### Getters & Helpers:
 
-* **Get Local Player from Controller**: Uma forma rápida de acessar o Local Player de um Player Controller.
-* **Get Owning Player Input Type**: Isso retorna o Input Type atual do usuário, podendo ser **Mouse e** **Keyboard**, **Gamepad** e **Touch**.
-* **Is Owning Player Using Gamepad**: Essa função verifica se o player está usando Gamepad.
-* **Is Owning Player Using Touch**: Essa função verifica se o player está usando Touch.
+* **Get Local Player from Controller**: A quick way to access the Local Player from a Player Controller.
+* **Get Owning Player Input Type**: This returns the user's current Input Type, which can be Mouse and Keyboard, Gamepad, or Touch.
+* **Is Owning Player Using Gamepad**: This function checks if the player is using a Gamepad.
+* **Is Owning Player Using Touch**: This function checks if the player is using Touch.
 
 <figure><img src="../.gitbook/assets/image (17).png" alt=""><figcaption></figcaption></figure>

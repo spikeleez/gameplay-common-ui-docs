@@ -3,7 +3,7 @@ description: Forget AddToViewport and Z-Order
 icon: layer-group
 ---
 
-# Layer Management and Asynchronous Loading
+# Stack Layer Management
 
 In Common UI, we don't just "throw" widgets onto the screen; we stack them in semantically organized Layers. In this module, we will explore the architecture behind your UI and how to navigate between screens without causing frame hitches.
 
