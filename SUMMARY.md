@@ -2,7 +2,7 @@
 
 ## Getting Started
 
-* [Configurando o Ambiente de Desenvolvimento C++](README.md)
+* [Setting Up the C++ Development Environment](README.md)
 
 ## Common UI
 
