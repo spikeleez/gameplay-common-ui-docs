@@ -1,10 +1,8 @@
 # Table of contents
 
-* [Welcome](README.md)
-
 ## Getting Started
 
-* [Configurando o Ambiente de Desenvolvimento C++](getting-started/quickstart.md)
+* [Configurando o Ambiente de Desenvolvimento C++](README.md)
 
 ## Common UI
 
