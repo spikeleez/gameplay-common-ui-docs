@@ -1,5 +1,5 @@
 ---
-description: Bem-vindo ao guia de utilização do Gameplay Common UI.
+description: Welcome to the Gameplay Common UI user guide.
 icon: display
 layout:
   width: default
@@ -20,86 +20,70 @@ metaLinks:
     - https://app.gitbook.com/s/yE16Xb3IemPxJWydtPOj/basics/editor
 ---
 
-# Introdução ao Gameplay Common UI
+# Introduction to Gameplay Common UI
 
-Este documento foi desenhado para desenvolvedores familiarizados com Blueprints na Unreal Engine que desejam dar o próximo passo para o C++ utilizando este plugin.
+This document is designed for developers familiar with Blueprints in Unreal Engine who want to take the next step into C++ using this plugin.
 
-#### 1. Configuração Inicial
+### 1. Initial Configuration
 
-Antes de escrevermos código, precisamos garantir que o plugin e o projeto "se conversem".
+Before writing code, we must ensure the plugin and the project communicate correctly.
 
-**Dependências (Build.cs)**
+#### Dependencies (Build.cs)
 
-Para usar as classes do C++ deste plugin no seu código do jogo, você precisa adicionar o módulo `GameplayCommonUI` à sua lista de dependências.
+To use the C++ classes from this plugin in your game code, you must add the `GameplayCommonUI` module to your dependency list.
 
-1. Abra o arquivo `.Build.cs` do seu projeto (geralmente em `Source/SeuProjeto/SeuProjeto.Build.cs`).
-2. Adicione `"GameplayCommonUI"` e `"CommonUI"` em `PublicDependencyModuleNames`.
+1. Open your project's `.Build.cs` file (usually in `Source/YourProject/YourProject.Build.cs`).
+2. Add `"GameplayCommonUI"` and `"CommonUI"` to `PublicDependencyModuleNames`.
 
 ```c#
-// Exemplo do seu arquivo .Build.cs
+// Example of your .Build.cs file
 PublicDependencyModuleNames.AddRange(new string[] { 
     "Core", 
     "CoreUObject", 
     "Engine", 
     "InputCore",
-    "CommonUI",           // Necessário
-    "GameplayCommonUI",   // O Plugin
-    "GameplayTags"        // Usado para gerenciar Layers
+    "CommonUI",           // Required for UI foundation
+    "GameplayCommonUI",   // The Plugin
+    "GameplayTags"        // Used for Layer management
 });
 ```
 
-**Configuração do Viewport**
+#### Viewport Configuration
 
-O Common UI exige uma classe específica de Viewport para gerenciar o foco (controle vs mouse).
+Common UI requires a specific Viewport class to manage focus (Controller vs. Mouse).
 
-1. No Editor, vá em **Project Settings** > **Engine** > **General Settings**.
-2. Procure por **Game Viewport Client Class**.
-3. Defina como `CommonGameViewportClient`.
+1. In the Editor, go to Project Settings > Engine > General Settings.
+2. Look for Game Viewport Client Class.
+3. Set it to `CommonGameViewportClient`.
 
-#### 2. Entendendo as Classes Principais (A Tradução Blueprint -> C++)
+### 2. Understanding Core Classes (Blueprint to C++ Translation)
 
-Aqui vamos traduzir os conceitos que você já conhece de UMG/Blueprints para a estrutura deste plugin.
+Here we translate concepts you already know from UMG/Blueprints into this plugin's C++ structure.
 
-**A Base da Tela: `UGameplayActivatableWidget`**
+* `UGameplayActivatableWidget`: The base class for all main screens (Main Menu, Inventory, Pause, HUD). In Blueprint, this is like a standard `UserWidget` but with input management "superpowers." It knows when it is "Activated" or "Deactivated" and automatically manages cursor visibility and input routing.
+* `UGameplayPrimaryLayout`: The master container holding your widgets. In Blueprint, this replaces the manual "HUD" logic where you "Add to Viewport." Instead of manual Z-Order, it uses Gameplay Tags to define layers (e.g., Game Layer, Menu Layer, Modal Layer).
+* `UGameplayButtonBase`: A wrapper for `CommonButton`. It automatically handles controller focus, click sounds, and hover/selection states.
 
-* **O que é:** É a classe pai de todas as telas principais do seu jogo (Menu Principal, Inventário, Pause, HUD).
-* **No Blueprint seria:** Um `UserWidget` comum, mas com superpoderes de Input.
-* **Por que usar:** Diferente de um Widget comum, este widget sabe quando foi "Ativado" (apareceu na tela) ou "Desativado". Ele gerencia automaticamente se o mouse deve aparecer ou se o input deve ir para o jogo.
+### 3. Tutorial: Creating Your First C++ Screen (Pause Menu)
 
-**O Layout Mestre: `UGameplayGameLayout`**
+We will create a simple menu. In C++, the logic stays in the code, while the visuals (positioning, colors) stay in the inherited Blueprint.
 
-* **O que é:** É o container que segura todas as suas widgets.
-* **No Blueprint seria:** O "HUD Principal" onde você adiciona as coisas com "Add to Viewport".
-* **A Diferença:** Em vez de usar Z-Order manual, o `GameplayGameLayout` usa **Gameplay Tags** para definir camadas (Layers). Ex: Camada de Jogo, Camada de Menu, Camada de Modal.
-
-**Botões Padronizados: `UGameplayButtonBase`**
-
-* **O que é:** Um botão wrapper do CommonButton.
-* **No Blueprint seria:** Um Widget customizado com um botão dentro.
-* **Por que usar:** Ele já trata foco de controle, som de clique e estados de hover/selecionado automaticamente.
-
-#### 3. Tutorial: Criando sua Primeira Tela C++ (Menu de Pause)
-
-Vamos criar um menu simples. Em C++, a lógica fica no código, e o visual (posicionamento, cores) fica no Blueprint herdado.
-
-**Passo A: O Arquivo de Cabeçalho (.h)**
-
-Crie uma nova classe C++ herdando de `GameplayActivatableWidget`. Vamos chamá-la de `MyPauseMenuWidget`.
+#### Step A: The Header File (.h)
 
 ```c++
 // MyPauseMenuWidget.h
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Widgets/GameplayActivatableWidget.h" // Importando a base do plugin
+#include "Widgets/GameplayActivatableWidget.h"
 #include "MyPauseMenuWidget.generated.h"
 
-// Forward Declaration (Dizemos que essas classes existem sem incluir o header pesado aqui)
+// Forward Declaration to minimize header inclusion
 class UGameplayButtonBase;
 
 /**
- * Menu de Pause simples.
- * Analogia: Este é o "Event Graph" do seu Widget Blueprint.
+ * UMyPauseMenuWidget
+ * Simple Pause Menu implementation using GameplayCommonUI.
  */
 UCLASS()
 class SEUPROJETO_API UMyPauseMenuWidget : public UGameplayActivatableWidget
@@ -107,18 +91,17 @@ class SEUPROJETO_API UMyPauseMenuWidget : public UGameplayActivatableWidget
     GENERATED_BODY()
 
 protected:
-    // --- 1. Eventos de Ciclo de Vida (Como Event Construct) ---
+   // --- Lifecycle Events ---
     
-    // Executado quando o widget é criado e suas variáveis (BindWidget) são conectadas.
+    // Called when the widget is created and BindWidget variables are linked
     virtual void NativeOnInitialized() override;
 
-    // Executado quando o widget ganha foco (aparece na tela).
+    // Called when the widget is activated and shown on screen
     virtual void NativeOnActivated() override;
 
-    // --- 2. Componentes da UI (Como as variáveis no Designer do UMG) ---
+    // --- UI Components (Designer Variables) ---
 
-    // meta = (BindWidget) obriga você a ter um botão chamado "ResumeButton" no Blueprint.
-    // Se não tiver, o jogo não compila/da erro, evitando crashes.
+   // meta = (BindWidget) forces the Blueprint to have a button named "ResumeButton"
     UPROPERTY(meta = (BindWidget))
     TObjectPtr<UGameplayButtonBase> ResumeButton;
 
@@ -126,7 +109,7 @@ protected:
     TObjectPtr<UGameplayButtonBase> QuitButton;
 
 private:
-    // --- 3. Funções de Lógica (Seus Custom Events) ---
+    // --- Logic Functions ---
     
     UFUNCTION()
     void HandleResumeClicked();
@@ -136,24 +119,21 @@ private:
 };
 ```
 
-**Passo B: O Arquivo de Implementação (.cpp)**
-
-Aqui definimos o comportamento.
+#### Step B: The Implementation File (.cpp)
 
 ```c++
 // MyPauseMenuWidget.cpp
 #include "MyPauseMenuWidget.h"
-#include "Widgets/GameplayButtonBase.h" // Agora incluímos o header real do botão
+#include "Widgets/GameplayButtonBase.h"
 
 void UMyPauseMenuWidget::NativeOnInitialized()
 {
-    Super::NativeOnInitialized(); // Sempre chame o Super!
-
-    // Analogia: Isso é como conectar o evento "OnClicked" no Event Graph.
+    // Always call the Super function!
+    Super::NativeOnInitialized();
     
+    // Binding the click events to our functions
     if (ResumeButton)
     {
-        // Quando ResumeButton for clicado, execute a função HandleResumeClicked
         ResumeButton->OnClicked().AddUObject(this, &UMyPauseMenuWidget::HandleResumeClicked);
     }
 
@@ -167,57 +147,49 @@ void UMyPauseMenuWidget::NativeOnActivated()
 {
     Super::NativeOnActivated();
     
-    // Aqui você pode pausar o jogo, tocar um som, etc.
-    // O GameplayActivatableWidget já pode lidar com Input Mode automaticamente
-    // dependendo da configuração "Input Config" no Blueprint.
+    // You can trigger Gameplay Cues here or pause game logic.
+    // The GameplayActivatableWidget handles Input Mode automatically based on 
+    // the "Input Config" set in the Blueprint defaults.
 }
 
 void UMyPauseMenuWidget::HandleResumeClicked()
 {
-    // Desativa este widget. O CommonUI remove ele da pilha e devolve o foco para o jogo.
+    // Deactivates this widget. CommonUI removes it from the stack and returns focus to the game.
     DeactivateWidget();
 }
 
 void UMyPauseMenuWidget::HandleQuitClicked()
 {
-    // Exemplo: Sair do jogo
-    // No mundo real, aqui você chamaria um "Confirmation Dialog" (veremos em breve!)
-    // GEngine->Exec(GetWorld(), TEXT("Quit")); // Exemplo simples
+    // Example: Quit the game. In production, you might push a "Confirmation Dialog" here.
+    UKismetSystemLibrary::QuitGame(this, GetOwningPlayer(), EQuitPreference::Quit, false);
 }
 ```
 
-**Passo C: Criando o Blueprint**
+#### Step C: Creating the Blueprint
 
-1. Vá no Unreal Editor.
-2. Crie um novo **Widget Blueprint**.
-3. Quando pedir a classe pai, procure por `MyPauseMenuWidget` (a classe C++ que acabamos de criar).
-4. No Designer, adicione dois botões (Use a classe `GameplayButtonBase` ou uma BP herdada dela).
-5. **IMPORTANTE:** Renomeie os botões no painel Hierarchy para `ResumeButton` e `QuitButton` (exatamente como no C++). O ícone deve mudar, indicando que estão vinculados.
-6. Estilize como quiser.
+1. In the Unreal Editor, create a new Widget Blueprint.
+2. Select `MyPauseMenuWidget` as the Parent Class.
+3. In the Designer, add two buttons. Use the `GameplayButtonBase` class.
+4. IMPORTANT: Rename the buttons in the Hierarchy panel to `ResumeButton` and `QuitButton` to match the C++ `BindWidget` names.
 
-#### 4. Dica Pro: Push Async (Evitando Hard References)
+### 4. Pro Tip: Async Pushing (Avoiding Hard References)
 
-Uma dor comum em C++ é ter que carregar classes. O `GameplayCommonUI` tem helpers maravilhosos para isso.
-
-Em vez de carregar a classe manualmente, você pode usar o `UGameplayPushActivatableWidgetAsync` (vimos esse arquivo no código fonte!).
-
-**Exemplo de uso (No seu PlayerController ou HUD C++):**
+Loading heavy UI classes can cause frame hitches. `GameplayCommonUI` provides async helpers to load and display widgets without blocking the main thread.
 
 ```cpp
 #include "Async/GameplayPushActivatableWidgetAsync.h"
 
-// ... dentro de alguma função que abre o menu ...
+// Inside a function in your PlayerController or HUD class:
+void AMyPlayerController::OpenPauseMenu(TSoftClassPtr<UGameplayActivatableWidget> PauseMenuSoftClass)
+{
+    // Define which Layer this widget belongs to using Gameplay Tags
+    FGameplayTag LayerTag = FGameplayTag::RequestGameplayTag(FName("UI.Layer.Menu"));
 
-// Define qual camada (Layer) esse widget vai entrar. 
-// As Tags são configuradas no Project Settings > Gameplay Common UI
-FGameplayTag LayerTag = FGameplayTag::RequestGameplayTag("UI.Layer.Menu");
-
-// Inicia o carregamento assíncrono e exibe quando pronto
-UGameplayPushActivatableWidgetAsync::PushActivatableWidget(
-    this,              // World Context
-    LayerTag,          // Em qual layer vai aparecer
-    PauseMenuSoftClass // TSoftClassPtr<UGameplayActivatableWidget> configurada no editor
-);
+    // Starts asynchronous loading and displays the widget once it is ready
+    UGameplayPushActivatableWidgetAsync::PushActivatableWidgetClassToLayer(
+        this,                  // World Context Object
+        PauseMenuSoftClass,    // Soft reference to the Widget Class            
+        LayerTag               // Target UI Layer
+    );
+}
 ```
-
-Isso garante que seu jogo não trave (hitch) ao tentar abrir um menu pesado pela primeira vez
