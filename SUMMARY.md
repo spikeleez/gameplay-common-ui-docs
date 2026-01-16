@@ -16,4 +16,4 @@
 * [Introduction to Gameplay Common Settings](common-settings/introduction-to-gameplay-common-settings.md)
 * [Dynamic Settings](common-settings/dynamic-settings.md)
 * [Local & Shared Settings](common-settings/local-and-shared-settings.md)
-* [Interfaces e Comunicação Desacoplada](common-settings/interfaces-e-comunicacao-desacoplada.md)
+* [Interfaces and Decoupled Communication](common-settings/interfaces-and-decoupled-communication.md)
