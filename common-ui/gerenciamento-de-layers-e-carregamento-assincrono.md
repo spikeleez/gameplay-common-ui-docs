@@ -108,7 +108,7 @@ void AMyPlayerController::OpenInventory()
 }
 ```
 
-#### 4. Configurando o `GameplayGameLayout` (Setup Único)
+#### 4. Configurando o `GameplayPrimaryLayout`(Setup Único)
 
 Para que tudo acima funcione, você precisa ter seu Layout configurado uma única vez.
 
