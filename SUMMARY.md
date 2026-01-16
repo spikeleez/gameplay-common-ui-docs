@@ -13,7 +13,7 @@
 
 ## Common Settings
 
-* [Introdução ao Gameplay Common Settings](common-settings/introducao-ao-gameplay-common-settings.md)
+* [Introduction to Gameplay Common Settings](common-settings/introduction-to-gameplay-common-settings.md)
 * [Configurações Dinâmicas](common-settings/configuracoes-dinamicas.md)
 * [Local & Shared Settings](common-settings/local-and-shared-settings.md)
 * [Interfaces e Comunicação Desacoplada](common-settings/interfaces-e-comunicacao-desacoplada.md)
