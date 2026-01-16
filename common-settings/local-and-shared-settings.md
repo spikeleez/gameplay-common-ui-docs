@@ -1,27 +1,23 @@
 ---
-description: No mundo moderno dos jogos, nem todas as configurações são iguais.
+description: In the modern world of gaming, not all configurations are created equal.
 icon: folder-gear
 ---
 
 # Local & Shared Settings
 
-Se eu mudo a **Resolução** no meu PC Gamer 4K, essa configuração **NÃO** deve ir para o meu Steam Deck (720p). Isso é **LOCAL**.
+This module explains the architectural separation between machine-specific configurations and player-specific preferences. Understanding this distinction is crucial for delivering a professional experience across different hardware (like a 4K PC vs. a Steam Deck).
 
-Se eu inverto o **Eixo Y** ou ligo **Legendas**, eu quero que isso funcione em qualquer lugar que eu logar. Isso é **SHARED** (Compartilhado/Conta).
+### 1. GameplaySettingsLocal (The Hardware Manager)
 
-O plugin `GameplayCommonSettings` força essa separação arquitetural para manter seu jogo profissional.
+This class handles everything tied to the specific machine where the game is running.
 
-#### 1. GameplaySettingsLocal (O "Gerente de Hardware")
+* Base Class: `UGameplaySettingsLocal`
+* Storage: Usually saved in a local `.ini` file (`GameUserSettings.ini`).
+* Responsibility: Graphics, Resolution, Window Mode, Performance.
 
-Esta classe cuida de tudo que é específico da máquina onde o jogo está rodando.
+#### Creating the Class (`MySettingsLocal.h`)
 
-* **Base Class:** `UGameplaySettingsLocal`
-* **Onde Salva:** Geralmente no arquivo `.ini` local (`GameUserSettings.ini`).
-* **Responsabilidade:** Gráficos, Janela, Desempenho.
-
-**Criando sua classe (MySettingsLocal.h)**
-
-Você deve herdar de `UGameplaySettingsLocal`. É aqui que você cria as funções que suas **Macros Dinâmicas** (vistas no [configuracoes-dinamicas.md](configuracoes-dinamicas.md "mention")) vão chamar.
+You must inherit from `UGameplaySettingsLocal`. This is where you implement the functions that your [Dynamic Macros](dynamic-settings.md) will call.
 
 ```c++
 // MySettingsLocal.h
@@ -30,6 +26,10 @@ Você deve herdar de `UGameplaySettingsLocal`. É aqui que você cria as funçõ
 #include "Framework/GameplaySettingsLocal.h"
 #include "MySettingsLocal.generated.h"
 
+/**
+ * UMySettingsLocal
+ * Manages machine-specific settings like graphics and performance.
+ */
 UCLASS()
 class UMySettingsLocal : public UGameplaySettingsLocal
 {
@@ -38,14 +38,14 @@ class UMySettingsLocal : public UGameplaySettingsLocal
 public:
     UMySettingsLocal();
 
-    // Cria um Getter/Setter para o Registry "ver" via macro
+    // Getter and Setter for the Registry to see via macros
     UFUNCTION()
     bool GetFullscreenMode() const;
 
     UFUNCTION()
     void SetFullscreenMode(bool bIsFullscreen);
 
-    // Função padrão do GameUserSettings para aplicar tudo de uma vez
+    // Standard engine function to apply non-resolution changes
     virtual void ApplyNonResolutionSettings() override;
 };
 ```
@@ -59,32 +59,36 @@ Aqui nós conversamos com o `GEngine->GameUserSettings` real.
 #include "MySettingsLocal.h"
 #include "GameFramework/GameUserSettings.h"
 
+UMySettingsLocal::UMySettingsLocal()
+{
+    // Constructor logic if needed
+}
+
 bool UMySettingsLocal::GetFullscreenMode() const
 {
-    // Lê do sistema real da engine
+    // Reading directly from the engine's core system
     return GetGameUserSettings()->GetFullscreenMode() == EWindowMode::Fullscreen;
 }
 
 void UMySettingsLocal::SetFullscreenMode(bool bIsFullscreen)
 {
-    // Aplica no sistema real
     EWindowMode::Type NewMode = bIsFullscreen ? EWindowMode::Fullscreen : EWindowMode::Windowed;
     GetGameUserSettings()->SetFullscreenMode(NewMode);
     
-    // Opcional: Aplicar imediatamente para feedback visual
+    // Optional: Apply immediately for instant visual feedback
     GetGameUserSettings()->ApplyResolutionSettings(false);
 }
 ```
 
-#### 2. GameplaySettingsShared (O "Perfil do Jogador")
+### 2. GameplaySettingsShared (The Player Profile)
 
-Esta classe cuida das preferências pessoais. Ela funciona quase como um SaveGame.
+This class manages personal preferences. It behaves similarly to a standard `SaveGame`.
 
-* **Base Class:** `UGameplaySettingsShared`
-* **Onde Salva:** Em um arquivo `.sav` (Slot de Save) ou na Nuvem.
-* **Responsabilidade:** Gameplay, Áudio, Acessibilidade, Keybindings.
+* Base Class: `UGameplaySettingsShared`
+* Storage: Saved in a `.sav` file (Save Slot) or the Cloud.
+* Responsibility: Gameplay, Audio, Accessibility, Keybindings, Invert Y-Axis.
 
-**Criando sua classe (MySettingsShared.h)**
+#### Creating the Class (`MySettingsShared.h`)
 
 ```c++
 // MySettingsShared.h
@@ -99,25 +103,23 @@ class UMySettingsShared : public UGameplaySettingsShared
     GENERATED_BODY()
 
 public:
-    // Exemplo: O jogador gosta de legendas?
+    // Example: Does the player want subtitles?
     UPROPERTY(Config)
     bool bSubtitlesEnabled = true;
 
-    // Getter/Setter para o Registry Dinâmico
+    // Dynamic Registry accessors
     UFUNCTION()
     bool GetSubtitlesEnabled() const { return bSubtitlesEnabled; }
 
     UFUNCTION()
     void SetSubtitlesEnabled(bool bNewValue);
     
-    // Chamado quando o Save é carregado. É aqui que você aplica as coisas!
+    // Called when settings are loaded or changed. This is where logic is triggered!
     virtual void ApplySettings() override;
 };
 ```
 
-**Implementando a Lógica (MySettingsShared.cpp)**
-
-Diferente do Local (que aplica na hora), o Shared precisa saber se "aplicar" ao carregar o jogo.
+#### Implementing the Logic (`MySettingsShared.cpp`)
 
 ```c++
 // MySettingsShared.cpp
@@ -129,8 +131,8 @@ void UMySettingsShared::SetSubtitlesEnabled(bool bNewValue)
     if (bSubtitlesEnabled != bNewValue)
     {
         bSubtitlesEnabled = bNewValue;
-        ApplySettings(); // Aplica a mudança
-        SaveSettings();  // Salva no disco/nuvem
+        ApplySettings(); // Apply settings
+        SaveSettings();  // Persists to disk/cloud
     }
 }
 
@@ -138,7 +140,6 @@ void UMySettingsShared::ApplySettings()
 {
     Super::ApplySettings();
 
-    // Aplica a lógica real no jogo
     if (UMySubtitlesSystem* Subs = GetWorld()->GetSubsystem<UMySubtitlesSystem>())
     {
         Subs->SetEnabled(bSubtitlesEnabled);
@@ -146,13 +147,11 @@ void UMySettingsShared::ApplySettings()
 }
 ```
 
-#### 3. Conectando tudo no Local Player
+### 3. Connecting Everything in the Local Player
 
-Agora vem a peça final. Como o `Registry` encontra essas classes? Ele pergunta ao `LocalPlayer`.
+The Registry finds these classes by asking the `LocalPlayer`. You must create a custom `LocalPlayer` class and initialize these objects there.
 
-Você precisa criar uma classe `LocalPlayer` customizada no seu projeto e inicializar esses objetos nela.
-
-**MyLocalPlayer.h:**
+#### `MyLocalPlayer.h`
 
 ```c++
 UCLASS()
@@ -161,7 +160,7 @@ class UMyLocalPlayer : public ULocalPlayer, public IGameplayCommonSettingsInterf
     GENERATED_BODY()
 
 public:
-    // Getters que as Macros do Registry usam
+    // Interface overrides used by the Registry Macros
     UFUNCTION()
     UMySettingsLocal* GetLocalSettings() const override;
 
@@ -169,7 +168,6 @@ public:
     UMySettingsShared* GetSharedSettings() const override;
 
 protected:
-    // O Local Player nasce muito cedo. Vamos criar os settings aqui.
     virtual void PostInitProperties() override;
 
 private:
@@ -182,18 +180,16 @@ private:
 ```
 
 {% hint style="warning" %}
-**Configuração no Editor:** Não esqueça de ir em **Project Settings > Engine > General Settings** e mudar a **Local Player Class** para `MyLocalPlayer` e também mudar a **Game User Settings Class** para a `MySettingsLocal`
+Editor Configuration: 1. Go to **Project Settings > Engine > General Settings**. 2. Change Local Player Class to `UMyLocalPlayer`. 3. Change Game User Settings Class to `UMySettingsLocal`.
 {% endhint %}
 
-#### 4. Resumo do Fluxo Completo
+### 4. Full Flow Summary
 
-Agora você tem o ciclo completo do GameplaySettings:
+1. UI (Widget): User moves a Slider.
+2. **Registry (Dynamic)**: The `GameplaySettingValueScalarDynamic` receives the event.
+3. **Macro: Uses**: `GET_LOCAL_SETTINGS_FUNCTION_PATH` to find the target.
+4. **LocalPlayer**: The macro accesses `UMyLocalPlayer` and calls `GetLocalSettings()`.
+5. **SettingsLocal**: The function `SetIsFullscreenEnabled` is executed.
+6. **Engine**: Unreal's `GameUserSettings` updates the resolution or window mode.
 
-1. **UI (Widget):** O usuário move um Slider.
-2. **Registry (Dynamic):** O `GameplaySettingValueScalarDynamic` recebe o evento.
-3. **Macro:** Ele usa a macro `GET_LOCAL_SETTINGS_FUNCTION_PATH` para achar o alvo.
-4. **LocalPlayer:** A macro pega o `MyLocalPlayer` e chama `GetLocalSettings()`.
-5. **SettingsLocal:** A função `SetFullscreenMode` é executada.
-6. **Engine:** O `GameUserSettings` da Unreal altera a resolução.
-
-Parece complexo na primeira configuração, mas depois disso, adicionar uma nova setting é trivial: Adiciona a variável no `Shared/Local`, cria o Getter/Setter, e adiciona elas no `Registry`.
+While the initial setup involves several steps, adding a new setting later is trivial: add the variable to Shared/Local, create the Getter/Setter, and register them in the Registry.

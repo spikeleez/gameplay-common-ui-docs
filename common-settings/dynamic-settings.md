@@ -16,19 +16,19 @@ layout:
     visible: true
 ---
 
-# Configurações Dinâmicas
+# Dynamic Settings
 
-Neste módulo, aprenderemos a usar as classes **Dynamic** (`ScalarDynamic`, `DiscreteDynamic`) junto com **Macros** poderosas para mapear configurações em segundos.
+In this module, you will learn how to leverage Dynamic classes (`ScalarDynamic`, `DiscreteDynamic`) alongside powerful Macros to map your game settings in seconds.
 
-#### 1. O Segredo das Macros de Configurações
+### 1. The Secret of Setting Macros
 
-Para que o sistema dinâmico funcione, o Registry precisa saber **onde** buscar e salvar os dados sem que você escreva o código da função manualmente. Usamos macros para apontar para as funções do seu `LocalSettings` ou `SharedSettings`.
+For the dynamic system to function, the Registry needs to know exactly where to fetch and save data without you writing manual glue code for every function. We use macros to point directly to the functions in your `LocalSettings` or `SharedSettings`.
 
-**Por que isso é obrigatório?** Porque o `UGameplaySettingValueScalarDynamic` precisa de um ponteiro para função (`UFunction*`) ou propriedade (`FProperty*`) para saber o que alterar.
+This is mandatory because `UGameplaySettingValueScalarDynamic` requires a function pointer (`UFunction*`) or property (`FProperty*`) to know what to modify.
 
-**Implementando as Macros no seu Registry**
+#### Implementing Macros in Your Registry
 
-No arquivo header do seu Registry (ex: `MyGameSettingRegistry.h`), você deve definir estas macros helper.
+In your Registry header file (e.g., `MyGameSettingRegistry.h`), define these helper macros. Ensure you adapt the class names (`UMyLocalPlayer`, `UMySettingsLocal`) to match your project.
 
 {% hint style="warning" %}
 _Adapte os nomes das classes (`UMyLocalPlayer`, `UMySettingsLocal`) para o seu projeto._
@@ -37,39 +37,43 @@ _Adapte os nomes das classes (`UMyLocalPlayer`, `UMySettingsLocal`) para o seu p
 ```c++
 // MyGameSettingRegistry.h
 
-// Helper para pegar getters/setters do Settings SHARED (ex: Legendas, Dados de Save)
+// Helper to retrieve getters/setters from SHARED Settings (e.g., Subtitles, Save Data)
 #define GET_SHARED_SETTINGS_FUNCTION_PATH(FunctionOrPropertyName) \
     GET_SETTINGS_FUNCTION_PATH(UMyLocalPlayer, GetSharedSettings, UMySettingsShared, FunctionOrPropertyName)
 
-// Helper para pegar getters/setters do Settings LOCAL (ex: Gráficos, Resolução)
+// Helper to retrieve getters/setters from LOCAL Settings (e.g., Graphics, Resolution)
 #define GET_LOCAL_SETTINGS_FUNCTION_PATH(FunctionOrPropertyName) \
     GET_SETTINGS_FUNCTION_PATH(UMyLocalPlayer, GetLocalSettings, UMySettingsLocal, FunctionOrPropertyName)
 ```
 
 {% hint style="info" %}
-**O que essa macro faz?** Ela diz: _"Vá no Player, pegue o objeto de Settings, e encontre a função com ESSE nome."_
+What does this macro do? It instructs the system: "Go to the Player, get the Settings object, and find the function with THIS name."
 {% endhint %}
 
-#### 2. Window Mode (Discrete Dynamic)
+### 2. Window Mode (Discrete Dynamic)
 
-Vamos criar uma configuração de **Modo de Janela** (Fullscreen, Windowed, Borderless). Em vez de criar uma classe, usaremos `UGameplaySettingValueDiscreteDynamic` diretamente no `.cpp` do Registry.
+We will create a Window Mode configuration (Fullscreen, Windowed, Borderless). Instead of creating a new class, we use `UGameplaySettingValueDiscreteDynamic_Enum` directly in the Registry's implementation file.
 
-**Cenário:** Queremos que essa opção só apareça no PC (Windows/Mac/Linux) e não em Consoles ou Mobile.
+Scenario: We want this option to appear only on PC (Windows/Mac/Linux) and hide it on Consoles or Mobile.
 
 ```c++
-// Dentro de MyGameSettingRegistry.cpp -> InitializeVideoSettings()
+// Inside MyGameSettingRegistry.cpp -> InitializeVideoSettings()
 
 UGameplaySettingValueDiscreteDynamic_Enum* Setting = NewObject<UGameplaySettingValueDiscreteDynamic_Enum>();
 Setting->SetDevName(TEXT("WindowMode"));
 Setting->SetDisplayName(LOCTEXT("WindowMode_Name", "Window Mode"));
 Setting->SetDescriptionRichText(LOCTEXT("WindowMode_Description", "In Windowed mode you can interact with other windows more easily, and drag the edges of the window to set the size. In Windowed Fullscreen mode you can easily switch between applications. In Fullscreen mode you cannot interact with other windows as easily, but the game will run slightly faster."));
 
+// Mapping to existing functions in LocalSettings
 Setting->SetDynamicGetter(GET_LOCAL_SETTINGS_FUNCTION_PATH(GetFullscreenMode));
 Setting->SetDynamicSetter(GET_LOCAL_SETTINGS_FUNCTION_PATH(SetFullscreenMode));
+
+// Adding the options
 Setting->AddOption(EWindowMode::Fullscreen, LOCTEXT("WindowModeFullscreen", "Fullscreen"));
 Setting->AddOption(EWindowMode::WindowedFullscreen, LOCTEXT("WindowModeWindowedFullscreen", "Windowed Fullscreen"));
 Setting->AddOption(EWindowMode::Windowed, LOCTEXT("WindowModeWindowed", "Windowed"));
 
+// Platform check: Kill the setting if the platform doesn't support windowed modes
 Setting->AddEditCondition(FGameplaySettingWhenPlatformHasTrait::KillIfMissing(GameplayCommonSettingsTags::Trait_SupportsWindowedMode, TEXT("Platform does not support window mode")));
 
 WindowModeSetting = Setting;
@@ -79,12 +83,12 @@ Display->AddSetting(Setting);
 
 <figure><img src="../.gitbook/assets/image (18).png" alt=""><figcaption></figcaption></figure>
 
-#### 3. Brightness (Scalar Dynamic)
+### 3. Brightness (Scalar Dynamic)
 
-Agora um slider simples para o Brightness/Gamma. Usaremos `UGameplaySettingValueScalarDynamic`.
+Now, let's implement a simple slider for Brightness/Gamma using `UGameplaySettingValueScalarDynamic`.
 
 ```c++
-// Dentro de MyGameSettingRegistry.cpp -> InitializeGameplaySettings()
+// Inside MyGameSettingRegistry.cpp -> InitializeGameplaySettings()
 
 UGameplaySettingValueScalarDynamic* Setting = NewObject<UGameplaySettingValueScalarDynamic>();
 Setting->SetDevName(TEXT("Brightness"));
@@ -94,12 +98,15 @@ Setting->SetDescriptionRichText(LOCTEXT("Brightness_Description", "Adjusts the b
 Setting->SetDynamicGetter(GET_LOCAL_SETTINGS_FUNCTION_PATH(GetDisplayGamma));
 Setting->SetDynamicSetter(GET_LOCAL_SETTINGS_FUNCTION_PATH(SetDisplayGamma));
 Setting->SetDefaultValue(2.2);
+
+// Formatting the displayed text (e.g., mapping 1.7-2.7 range to 50%-150%)
 Setting->SetDisplayFormat([](double SourceValue, double NormalizedValue)
 {
 	return FText::Format(LOCTEXT("BrightnessFormat", "{0}%"), (int32)FMath::GetMappedRangeValueClamped(FVector2D(0, 1), FVector2D(50, 150), NormalizedValue));
 });
 Setting->SetSourceRangeAndStep(TRange<double>(1.7, 2.7), 0.01);
 
+// Only allow the primary player to change this
 Setting->AddEditCondition(FGameplaySettingWhenPlayingAsPrimaryPlayer::Get());
 
 Display->AddSetting(Setting);
@@ -107,12 +114,12 @@ Display->AddSetting(Setting);
 
 <figure><img src="../.gitbook/assets/image (21).png" alt=""><figcaption></figcaption></figure>
 
-#### 4. Texture Quality (Discrete Dynamic)
+### 4. Texture Quality (Discrete Dynamic)
 
-Você pode usar o `UGameplaySettingValueDiscreteDynamic_Number` para criar configurações gráficas de Texture, Post Process Quality, Shadow Quality, dentre outros.
+You can use `UGameplaySettingValueDiscreteDynamic_Number` to create graphical settings for Textures, Post-Processing, Shadows, and more.
 
 ```c++
-// Dentro de MyGameSettingRegistry.cpp -> InitializeVideoSettings()
+// Inside MyGameSettingRegistry.cpp -> InitializeVideoSettings()
 
 UGameplaySettingValueDiscreteDynamic_Number* Setting = NewObject<UGameplaySettingValueDiscreteDynamic_Number>();
 
@@ -132,7 +139,7 @@ Setting->AddEditDependency(AutoSetQuality);
 Setting->AddEditDependency(GraphicsQualityPresets);
 Setting->AddEditCondition(MakeShared<FGameplaySettingEditCondition_VideoQuality>(TEXT("Platform does not support Texture quality")));
 
-// When this setting changes, it can GraphicsQualityPresets to be set to custom, or a particular preset.
+// Linking dependencies: If presets change, this updates; if this changes, presets set to "Custom"
 GraphicsQualityPresets->AddEditDependency(Setting);
 
 GraphicsQuality->AddSetting(Setting);
@@ -140,11 +147,13 @@ GraphicsQuality->AddSetting(Setting);
 
 <figure><img src="../.gitbook/assets/image (20).png" alt=""><figcaption></figcaption></figure>
 
-#### 5. Resumo das Classes que utilizamos
+### 5. Summary of Utilized Classes
 
-| Classe                                     | Uso Ideal                                                                          |
-| ------------------------------------------ | ---------------------------------------------------------------------------------- |
-| **`UGameplaySettingValueScalarDynamic`**   | Sliders simples (Volume, Brilho, FOV, Sensibilidade).                              |
-| **`UGameplaySettingValueDiscreteDynamic`** | Listas de opções (Enum) ou booleanos (On/Off) que mapeiam para funções existentes. |
+| Class                                      | Ideal Use Case                                                               |
+| ------------------------------------------ | ---------------------------------------------------------------------------- |
+| **`UGameplaySettingValueScalarDynamic`**   | Simple sliders (Volume, Brightness, FOV, Sensitivity).                       |
+| **`UGameplaySettingValueDiscreteDynamic`** | Lists of options (Enums) or Booleans (On/Off) mapping to existing functions. |
 
-Você acabou de ver alguns dos exemplos de como podemos utilizar as classes nativas do `GameplayCommonSettings` para criar nossas próprias configurações. No próximo módulo, aprenderemos como podemos registrar essas configurações no `SettingsLocal` ou no `SettingsShared`
+You have now seen how to use the native GameplayCommonSettings classes to create custom configurations efficiently.
+
+Would you like me to show you how to implement the `GetLocalSettings` and `GetSharedSettings` functions in your Local Player class to support these macros?

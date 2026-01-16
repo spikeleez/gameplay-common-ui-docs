@@ -1,34 +1,49 @@
 ---
 description: >-
-  Neste módulo, vamos explorar as Interfaces que vêm com o plugin e como criar a
-  sua própria para tornar o código mais limpo.
+  In this module, we will explore the interfaces that come with the plugin and
+  how to create your own to make the code cleaner.
 icon: tower-cell
 ---
 
 # Interfaces e Comunicação Desacoplada
 
-#### 1. IGameplaySettingActionInterface
+### 1. IGameplaySettingActionInterface
 
-Localização: `Interfaces/GameplaySettingActionInterface.h`
+Location: `Interfaces/GameplaySettingActionInterface.h`
 
-Algumas configurações não são apenas valores (Slider/Combobox). Algumas são **Ações**, como "Calibrar HDR", "Ver Créditos" ou "Resetar para Padrão".
+Not every setting is a simple value like a Slider or a Combobox. Some settings are Actions—for example, "Calibrate HDR," "View Credits," or "Reset to Default."
 
-Se você criar um Widget customizado para uma configuração específica (ex: um botão bonito para Calibração), ele deve implementar essa interface para se comunicar com o sistema de Settings.
+If you create a custom widget for a specific setting (e.g., a specialized button for calibration), it should implement this interface to communicate seamlessly with the Settings system.
 
-**Funções Principais:**
+Core Functions:
 
-* `ExecuteAction()`: Chamado quando o jogador confirma a ação.
-* `IsActionEnabled()`: Permite desabilitar o botão (ex: não pode resetar se já estiver no padrão).
+* `ExecuteAction()`: Triggered when the player confirms the action (e.g., clicks the button).
+* `IsActionEnabled()`: Allows you to disable the button dynamically (e.g., graying out the "Reset" button if settings are already at their default values).
 
-#### 2. IGameplayCommonSettings
+### 2. IGameplayCommonSettingsInterface
 
-Localização: `Interfaces/GameplayCommonSettingsInterface.h`&#x20;
+Location: `Interfaces/GameplayCommonSettingsInterface.h`
 
-Graças a essa interface, o Registry não precisa mais saber qual é a classe responsável por manter as configurações locais e compartilhadas. Ele só quer "alguém que forneça elas".
+This interface is the "glue" that allows the Registry to remain decoupled from your specific game classes. The Registry doesn't need to know the exact name of your Local Player or Settings class; it only needs to know that "someone" can provide the required data.
 
-**Funções Principais:**
+As we saw in the Dynamic Settings module, the macros rely on this interface to find the correct data paths.
 
-* `GetLocalSettings()`: Pega a referência para o `GameplaySettingsLocal` ou classes filhas.
-* `GetSharedSettings()`: Pega a referência para o `GameplaySettingsShared` ou classes filhas.
+Core Functions:
 
-Isso torna seu sistema de configurações extremamente robusto e modular, nós esperamos chamar essas funções na macro vista em [configuracoes-dinamicas.md](configuracoes-dinamicas.md "mention")
+* `GetLocalSettings()`: Returns a reference to the `UGameplaySettingsLocal` (or its child class).
+* `GetSharedSettings()`: Returns a reference to the `UGameplaySettingsShared` (or its child class).
+
+#### Why this is Essential for Production
+
+By implementing `IGameplayCommonSettingsInterface` in your `ULocalPlayer` (as shown in the previous module), you ensure that the system is modular. If you ever decide to change how settings are stored or accessed, you only need to update the interface implementation, and the rest of your UI and Registry logic will remain untouched.
+
+***
+
+#### Summary of the Settings Architecture
+
+With these pieces in place, your C++ settings architecture follows a clean, professional flow:
+
+1. Interface: Provides a standard way to access settings via the `LocalPlayer`.
+2. Shared/Local Classes: Store and apply the actual values.
+3. Registry: Lists the settings and connects them to the classes using [Dynamic Macros](dynamic-settings.md).
+4. UI: Automatically generates the entries and handles player input.
